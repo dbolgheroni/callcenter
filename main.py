@@ -25,5 +25,6 @@ class VulcaFactory(Factory):
     def buildProtocol(self, addr):
         return VulcaProtocol(self)
 
-reactor.listenTCP(5678, VulcaFactory())
-reactor.run()
+if __name__ == '__main__':
+    reactor.listenTCP(5678, VulcaFactory())
+    reactor.run()
