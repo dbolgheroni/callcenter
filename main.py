@@ -4,8 +4,13 @@ from __future__ import print_function
 
 from twisted.internet.protocol import Factory
 from twisted.internet import reactor, protocol
+from twisted.protocols.basic import LineReceiver
 
-class VulcaProtocol(protocol.Protocol):
+class VulcaProtocol(LineReceiver):
+    # by default, protocols.basic.LineReceiver uses b'\r\n' as the
+    # default delimiter, so change it
+    delimiter = b'\n'
+
     def __init__(self, factory):
         self.factory = factory
 
@@ -17,8 +22,8 @@ class VulcaProtocol(protocol.Protocol):
     def connectionLost(self, reason):
         print("connection lost")
 
-    def dataReceived(self, data):
-        print("#### data received")
+    def lineReceived(self, line):
+        print("#### line received")
 
 
 class VulcaFactory(Factory):
