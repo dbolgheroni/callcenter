@@ -32,7 +32,7 @@ class VulcaProtocol(LineReceiver):
         # try not to use regex, since it's more complex and slower
         callid = line.split(': ')
 
-        if callid[0] == 'variable_sip_call_id':
+        if callid[0] == 'variable_call_uuid':
             print('call', callid[1], 'received')
 
 
