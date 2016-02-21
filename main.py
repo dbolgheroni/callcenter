@@ -6,6 +6,8 @@ from twisted.internet.protocol import Factory
 from twisted.internet import reactor, protocol
 from twisted.protocols.basic import LineReceiver
 
+from loperator import *
+
 
 class VulcaProtocol(LineReceiver):
     # by default, protocols.basic.LineReceiver uses b'\r\n' as the
@@ -40,5 +42,9 @@ class VulcaFactory(Factory):
 
 
 if __name__ == '__main__':
+    # state 0 is free; state 1 is busy
+    o1 = Operator(id=0)
+    o2 = Operator(id=1)
+
     reactor.listenTCP(5678, VulcaFactory())
     reactor.run()
