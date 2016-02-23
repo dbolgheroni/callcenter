@@ -20,6 +20,10 @@ class Operator:
         Operator.busyopq.append(op)
         return op
 
+    @classmethod
+    def return_operator(cls, op):
+        Operator.freeopq.append(op)
+
     @property
     def id(self):
         return self.__id
