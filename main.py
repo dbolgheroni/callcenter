@@ -22,35 +22,21 @@ class VulcaProtocol(LineReceiver):
 
     # override
     def connectionMade(self):
-        #print("connection made")
-        # receive
+        # receive the call
         self.transport.write("connect\n\n")
 
     def connectionLost(self, reason):
-        print("connection lost")
+        self.__process_call_finish()
 
     def lineReceived(self, line):
         # parse call uuid
         self.__callid = self.__parse_callid(line)
 
-        # when a call uuid is detected, try to get an operator
         if self.__callid:
-            print("call", self.__callid, "received")
-
-            # add call to queue
-            callq.append(self.__callid)
-            print("call", self.__callid, "waiting in queue")
-
-            # get an operator
-            op = Operator.get_operator()
-            if op:
-                print("call", self.__callid, "answered by operator",
-                        op.id)
-
-                # if there is an operator, call is popped from queue
-                callq.popleft()
-            else:
-                print("all operators are busy")
+            # since lineReceived is called whenever a new line is
+            # received, we must save it to not be overridden
+            self.__callidsave = self.__callid
+            self.__process_call_start(self.__callidsave)
 
     def __parse_callid(self, line):
         # try not to use regex, since it's more complex and slower
@@ -58,6 +44,37 @@ class VulcaProtocol(LineReceiver):
 
         if callid[0] == 'variable_call_uuid':
             return callid[1]
+
+    def __process_call_start(self, callid):
+        print("call", callid, "received")
+
+        # add call to queue
+        callq.append(callid)
+        print("call", callid, "waiting in queue")
+
+        # get an operator
+        self.__op = Operator.get_operator()
+        if self.__op:
+            print("call", callid, "answered by operator", self.__op.id)
+
+            # if there is an operator, call is popped from queue
+            callq.popleft()
+        else:
+            print("all operators are busy")
+
+    def __parse_disconnect(self, line):
+        d = line.split(': ')
+
+        if d[0] == "Content-Disposition":
+            if d[1] == "disconnect":
+                return True
+            else:
+                return False
+
+    def __process_call_finish(self):
+        Operator.return_operator(self.__op)
+        print("call", self.__callidsave, "finished and operator",
+                self.__op.id, "available")
 
 
 class VulcaFactory(Factory):
