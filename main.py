@@ -83,8 +83,8 @@ class VulcaFactory(Factory):
 
 
 if __name__ == '__main__':
-    o1 = Operator(id=0)
-    o2 = Operator(id=1)
+    o1 = Operator(id=1)
+    o2 = Operator(id=2)
 
     # it's a common idiom to use deque() as a queue
     callq = deque()
