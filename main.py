@@ -5,7 +5,7 @@ from __future__ import print_function
 from collections import deque
 
 from twisted.internet.protocol import Factory
-from twisted.internet import reactor, protocol
+from twisted.internet import reactor, protocol, defer
 from twisted.protocols.basic import LineReceiver
 
 from loperator import *
@@ -36,6 +36,8 @@ class VulcaProtocol(LineReceiver):
             # since lineReceived is called whenever a new line is
             # received, we must save it to not be overridden
             self.__callidsave = self.__callid
+
+            print("call", self.__callidsave, "received")
             self.__process_call_start(self.__callidsave)
 
     def __parse_callid(self, line):
@@ -46,21 +48,14 @@ class VulcaProtocol(LineReceiver):
             return callid[1]
 
     def __process_call_start(self, callid):
-        print("call", callid, "received")
-
-        # add call to queue
-        callq.append(callid)
-        print("call", callid, "waiting in queue")
-
         # get an operator
         self.__op = Operator.get_operator()
         if self.__op:
             print("call", callid, "answered by operator", self.__op.id)
-
-            # if there is an operator, call is popped from queue
-            callq.popleft()
         else:
-            print("all operators are busy")
+            # not enough operators, append it to a queue
+            callq.append(callid)
+            print("call", callid, "waiting in queue")
 
     def __parse_disconnect(self, line):
         d = line.split(': ')
