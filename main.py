@@ -5,7 +5,7 @@ from __future__ import print_function
 from collections import deque
 
 from twisted.internet.protocol import Factory
-from twisted.internet import reactor, protocol, defer
+from twisted.internet import reactor, threads
 from twisted.protocols.basic import LineReceiver
 
 from loperator import *
@@ -19,6 +19,7 @@ class VulcaProtocol(LineReceiver):
     def __init__(self, factory):
         self.factory = factory
         self.__callid = None
+        self.__op = None
 
     # override
     def connectionMade(self):
@@ -48,14 +49,13 @@ class VulcaProtocol(LineReceiver):
             return callid[1]
 
     def __process_call_start(self, callid):
-        # get an operator
-        self.__op = Operator.get_operator()
-        if self.__op:
-            print("call", callid, "answered by operator", self.__op.id)
-        else:
-            # not enough operators, append it to a queue
-            callq.append(callid)
-            print("call", callid, "waiting in queue")
+        # try to get an operator first
+        d = threads.deferToThread(Operator.get_operator)
+        d.addCallback(self.__process_call)
+
+    def __process_call(self, op):
+        self.__op = op
+        print("call", self.__callidsave, "answered by operator", self.__op.id)
 
     def __parse_disconnect(self, line):
         d = line.split(': ')
@@ -67,9 +67,12 @@ class VulcaProtocol(LineReceiver):
                 return False
 
     def __process_call_finish(self):
-        Operator.return_operator(self.__op)
-        print("call", self.__callidsave, "finished and operator",
-                self.__op.id, "available")
+        if self.__op:
+            Operator.return_operator(self.__op)
+            print("call", self.__callidsave, "finished and operator",
+                    self.__op.id, "available")
+        else:
+            print("call", self.__callidsave, "finished")
 
 
 class VulcaFactory(Factory):

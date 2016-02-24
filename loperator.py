@@ -1,8 +1,8 @@
+import time
 from collections import deque
 
 class Operator:
     freeopq = deque()
-    busyopq = deque()
 
     # when added, operator is free
     def __init__(self, id=id, state=0):
@@ -12,12 +12,13 @@ class Operator:
 
     @classmethod
     def get_operator(cls):
-        try:
-            op = Operator.freeopq.popleft()
-        except IndexError:
-            return None
+        while True:
+            try:
+                op = Operator.freeopq.popleft()
+                break
+            except IndexError:
+                time.sleep(1)
 
-        Operator.busyopq.append(op)
         return op
 
     @classmethod
