@@ -5,7 +5,7 @@ from __future__ import print_function
 from collections import deque
 
 from twisted.internet.protocol import Factory
-from twisted.internet import reactor, threads
+from twisted.internet import reactor, defer
 from twisted.protocols.basic import LineReceiver
 
 from loperator import *
@@ -49,8 +49,8 @@ class VulcaProtocol(LineReceiver):
             return callid[1]
 
     def __process_call_start(self, callid):
-        # try to get an operator first
-        d = threads.deferToThread(Operator.get_operator)
+        # get an operator before processing the call
+        d = Operator.get_operator()
         d.addCallback(self.__process_call)
 
     def __process_call(self, op):
@@ -68,9 +68,9 @@ class VulcaProtocol(LineReceiver):
 
     def __process_call_finish(self):
         if self.__op:
-            Operator.return_operator(self.__op)
             print("call", self.__callidsave, "finished and operator",
                     self.__op.id, "available")
+            Operator.return_operator(self.__op)
         else:
             print("call", self.__callidsave, "finished")
 
@@ -83,9 +83,6 @@ class VulcaFactory(Factory):
 if __name__ == '__main__':
     o1 = Operator(id=1)
     o2 = Operator(id=2)
-
-    # it's a common idiom to use deque() as a queue
-    callq = deque()
 
     reactor.listenTCP(5678, VulcaFactory())
     reactor.run()
