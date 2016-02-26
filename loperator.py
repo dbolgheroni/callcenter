@@ -3,21 +3,21 @@ from collections import deque
 from twisted.internet import defer
 
 class Operator:
-    freeopdq = defer.DeferredQueue()
+    availableq = defer.DeferredQueue()
 
     # when added, operator is free
     def __init__(self, id=id, state=0):
         self.__id = id
         self.__state = state
-        Operator.freeopdq.put(self)
+        Operator.availableq.put(self)
 
     @classmethod
     def get_operator(cls):
-        return Operator.freeopdq.get()
+        return Operator.availableq.get()
 
     @classmethod
     def return_operator(cls, op):
-        Operator.freeopdq.put(op)
+        Operator.availableq.put(op)
 
     @property
     def id(self):
