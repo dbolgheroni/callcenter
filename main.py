@@ -55,6 +55,7 @@ class VulcaProtocol(LineReceiver):
 
     def __process_call(self, op):
         self.__op = op
+        self.transport.write("api uuid_answer " + self.__callid + "\n\n")
         print("call", self.__callidsave, "answered by operator", self.__op.id)
 
     def __parse_disconnect(self, line):
