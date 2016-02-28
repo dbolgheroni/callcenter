@@ -3,6 +3,7 @@
 from __future__ import print_function
 
 from collections import deque
+import uuid
 
 from twisted.internet.protocol import Factory
 from twisted.internet import reactor, defer
@@ -33,6 +34,7 @@ class VulcaProtocol(LineReceiver):
         # parse call uuid
         self.__callid = self.__parse_callid(line)
 
+        # if a call uuid is detected, proceed to call an operator
         if self.__callid:
             # since lineReceived is called whenever a new line is
             # received, we must save it to not be overridden
@@ -41,6 +43,10 @@ class VulcaProtocol(LineReceiver):
             print("call", self.__callidsave, "received")
             self.__process_call_start(self.__callidsave)
 
+        # parse ignored calls
+        self.__parse_noanswer(line)
+
+    #### parse methods
     def __parse_callid(self, line):
         # try not to use regex, since it's more complex and slower
         callid = line.split(': ')
@@ -48,6 +54,12 @@ class VulcaProtocol(LineReceiver):
         if callid[0] == 'variable_call_uuid':
             return callid[1]
 
+    def __parse_noanswer(self, line):
+        if line == '-ERR NO_ANSWER':
+            print("call {0} ignored by operator {1}".format(
+                    self.__callidsave, self.__op.id))
+
+    #### process calls methods
     def __process_call_start(self, callid):
         # get an operator before processing the call
         d = Operator.get_operator()
@@ -55,8 +67,25 @@ class VulcaProtocol(LineReceiver):
 
     def __process_call(self, op):
         self.__op = op
-        self.transport.write("api uuid_answer " + self.__callid + "\n\n")
-        print("call", self.__callidsave, "answered by operator", self.__op.id)
+
+        # answer call (stop dialing)
+        uuid_answer = "api uuid_answer {0}\n\n".format(self.__callid)
+        self.transport.write(uuid_answer)
+
+        # call operator
+        # generate uuid in Python, and we can simplify parsing code
+        # FreeSWITCH uses uuid version 1
+        print("call {0} ringing for operator {1}".format(
+                self.__callidsave, self.__op.id))
+
+        u = uuid.uuid1()
+        originate = "api originate " \
+                "{{origination_uuid={0},originate_timeout=10}}" \
+                "sofia/internal/{1}% {1}\n\n".format(u, self.__op.effid)
+        self.transport.write(originate)
+
+        #print("call {0} answered by operator {1}"
+        #        .format(self.__callidsave, self.__op.id)
 
     def __parse_disconnect(self, line):
         d = line.split(': ')
