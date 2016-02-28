@@ -82,8 +82,10 @@ class VulcaFactory(Factory):
 
 
 if __name__ == '__main__':
-    o1 = Operator(id=1)
-    o2 = Operator(id=2)
+    #o1 = Operator(id=1, effid=1001)
+    #o2 = Operator(id=2, effid=1002)
+    #o3 = Operator(id=3, effid=1003)
+    o4 = Operator(id=4, effid=1004)
 
     reactor.listenTCP(5678, VulcaFactory())
     reactor.run()
